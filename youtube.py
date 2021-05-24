@@ -1,149 +1,121 @@
-from tkinter import *
-from tkinter import ttk
-from tkinter import filedialog
-from pytube import YouTube
-# sample== https://www.youtube.com/watch?v=ZHQaA9Z6vlQ
-FolderName = ""
-fileSizeInBytes = 0
-MaxFileSize = 0
-def openDirectory():
-        global FolderName
-        FolderName =  filedialog.askdirectory()
-        if(len(FolderName) > 1):
-            fileLocationLabelError.config(text=FolderName,
-                                               fg="green")
-        
+import os
+import sys
+from DownloadMethods import Download
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog
+from PyQt5.QtCore import QCoreApplication, QObject, QRunnable
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        self.setGeometry(200, 200, 592, 316)
+        self.setWindowTitle("Youtube Downloader")
+        self.font = QtGui.QFont()
+        self.font.setFamily("Leelawadee UI")
+        self.std_download_path = str(os.path.join(os.path.expanduser("~"), "Downloads"))
+        self.initUI()
+    def initUI(self):
+        self.label_top = QtWidgets.QLabel(self)
+        self.label_top.setObjectName("label_top")
+        self.label_top.setGeometry(QtCore.QRect(130, 10, 331, 41))
+        self.font.setPointSize(22)
+        self.font.setBold(True)
+        self.font.setWeight(75)
+        self.label_top.setFont(self.font)
+        self.label_top.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_top.setText("Youtube Downloader")
+        self.button_download = QtWidgets.QPushButton(self)
+        self.button_download.setObjectName("button_download")
+        self.button_download.setGeometry(QtCore.QRect(240, 170, 111, 51))
+        self.font.setPointSize(14)
+        self.font.setBold(True)
+        self.font.setWeight(75)
+        self.button_download.setFont(self.font)
+        self.button_download.setText("Download")
+        self.button_download.clicked.connect(self.download_button)
+        self.check_video = QtWidgets.QCheckBox(self)
+        self.check_video.setObjectName("check_video")
+        self.check_video.setGeometry(QtCore.QRect(390, 190, 151, 21))
+        self.font.setPointSize(12)
+        self.font.setBold(True)
+        self.font.setWeight(75)
+        self.check_video.setFont(self.font)
+        self.check_video.setText("Download Video")
+        self.input_url = QtWidgets.QLineEdit(self)
+        self.input_url.setObjectName("input_url")
+        self.input_url.setGeometry(QtCore.QRect(20, 60, 551, 41))
+        self.font.setPointSize(10)
+        self.input_url.setFont(self.font)
+        self.input_url.setAlignment(QtCore.Qt.AlignCenter)
+        self.input_url.setText("")
+        self.input_url.setPlaceholderText("Enter URL Here...")
+        self.button_set = QtWidgets.QPushButton(self)
+        self.button_set.setObjectName("button_set")
+        self.button_set.setGeometry(QtCore.QRect(500, 110, 71, 41))
+        self.button_set.setFont(self.font)
+        self.button_set.setText("Set")
+        self.button_set.clicked.connect(self.set_button)
+        self.input_path = QtWidgets.QLineEdit(self)
+        self.input_path.setObjectName("input_path")
+        self.input_path.setGeometry(QtCore.QRect(20, 110, 471, 41))
+        self.input_path.setFont(self.font)
+        self.input_path.setAlignment(QtCore.Qt.AlignCenter)
+        self.input_path.setText(self.std_download_path)
+        self.radio_single = QtWidgets.QRadioButton(self)
+        self.radio_single.setObjectName("radio_single")
+        self.radio_single.setGeometry(QtCore.QRect(390, 160, 81, 21))
+        self.radio_single.setFont(self.font)
+        self.radio_single.setText("Single")
+        self.radio_single.setChecked(True)
+        self.radio_playlist = QtWidgets.QRadioButton(self)
+        self.radio_playlist.setObjectName("radio_playlist")
+        self.radio_playlist.setGeometry(QtCore.QRect(470, 160, 81, 21))
+        self.radio_playlist.setFont(self.font)
+        self.radio_playlist.setText("Playlist")
+        self.label_done = QtWidgets.QLabel(self)
+        self.label_done.setObjectName("label_done")
+        self.label_done.setGeometry(QtCore.QRect(210, 240, 171, 31))
+        self.font.setPointSize(14)
+        self.font.setBold(False)
+        self.font.setWeight(50)
+        self.label_done.setFont(self.font)
+        self.label_done.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_done.setText("")
+        self.combo_quality = QtWidgets.QComboBox(self)
+        self.combo_quality.addItem("")
+        self.combo_quality.addItem("")
+        self.combo_quality.addItem("")
+        self.combo_quality.setObjectName("combo_quality")
+        self.combo_quality.setGeometry(QtCore.QRect(90, 190, 69, 22))
+        self.font.setPointSize(10)
+        self.font.setBold(False)
+        self.font.setWeight(50)
+        self.combo_quality.setFont(self.font)
+        self.combo_quality.setItemText(0, "Best")
+        self.combo_quality.setItemText(1, "Semi")
+        self.combo_quality.setItemText(2, "Worst")
+        self.label_quality = QtWidgets.QLabel(self)
+        self.label_quality.setObjectName("label_quality")
+        self.label_quality.setGeometry(QtCore.QRect(50, 160, 151, 21))
+        self.label_quality.setFont(self.font)
+        self.label_quality.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_quality.setText("Download Quality:")
+    def set_button(self):
+        file_name = QFileDialog.getExistingDirectory()
+        if file_name:
+            self.input_path.setText(file_name)
+    def download_button(self):
+        url = self.input_url.text()
+        save_path = self.input_path.text()
+        quality = self.combo_quality.currentText()
+        if self.radio_single.isChecked():
+            playlist = False
         else:
-            fileLocationLabelError.config(text="Please choose folder!",
-                                         fg="red")
-        
-
-def DownloadFile():
-        global MaxFileSize,fileSizeInBytes
-        
-        choice = youtubeChoices.get()
-        video = youtubeEntry.get()
-        
-        if(len(video)>1):
-                youtubeEntryError.config(text="")
-                print(video,"at",FolderName)
-                yt = YouTube(video,on_progress_callback=progress)
-                #on_complete_callback=complete
-                print("Video Name is:\n\n",yt.title)
-                
-                
-                if(choice == downloadChoices[0]):
-                    print("720p Video file downloading...")
-                    loadingLabel.config(text="720p Video file downloading...")#
-                    
-                    selectedVideo =yt.streams.filter(progressive=True).first()
-                                
-                elif(choice == downloadChoices[1]):
-                    print("144p video file downloading...")
-                    selectedVideo =yt.streams.filter(progressive=True,
-                                                     file_extension='mp4').last()
-                  
-                elif(choice == downloadChoices[2]):
-                    print("3gp file downloading...")
-                    selectedVideo =yt.streams.filter(file_extension='3gp').first()
-                    
-                elif(choice == downloadChoices[3]):
-                    print("Audio file downloading...")
-                    selectedVideo = yt.streams.filter(only_audio=True).first()
-                    
-                fileSizeInBytes = selectedVideo.filesize
-                MaxFileSize = fileSizeInBytes/1024000
-                MB = str(MaxFileSize) + " MB"
-                print("File Size = {:00.00f} MB".format(MaxFileSize))
-                
-                #now Download ------->
-                selectedVideo.download(FolderName)               
-                #==========>
-                print("Downloaded on:  {}".format(FolderName))
-                #loadingLabel.config(text=("Download Complete ",MB))
-                complete()
-                
+            playlist = True
+        if self.check_video.isChecked():
+            Download(url, save_path, quality, playlist).mp4_download()
         else:
-                youtubeEntryError.config(text="Please paste youtube link",
-                                         fg="red")
-        #============progress bar==================
+            Download(url, save_path, quality, playlist).mp3_download()
+        self.input_url.setText("")
+        self.label_done.setText("Download Done!")
 
-def progress(stream=None, chunk=None, file_handle=None, remaining=None):
-    # Gets the percentage of the file that has been downloaded.
-    #nextLevel = Toplevel(root)
-    percent = (100 * (fileSizeInBytes - remaining)) / fileSizeInBytes
-    print("{:00.0f}% downloaded".format(percent))
-    #loadingLabel.config(text="Downloading...") 
-            
-def complete():
-        loadingLabel.config(text=("Download Complete"))
-
-
-
-
-        
-#================tkinter window       
-root = Tk()
-root.title("Youtube Video downloader")
-#===============contents strech ac to windows strech====      
-root.grid_columnconfigure(0, weight=1)  #strech things Horiontally
-#=============youtube link label=================
-youtubeLinkLabel = Label(root,
-                        text="Please paste the youtube link here: ",
-                                      fg="blue",font=("Agency FB", 30))
-youtubeLinkLabel.grid()
-#==========get youtube link in entry box
-youtubeEntryVar = StringVar()
-youtubeEntry = Entry(root, width=50,
-                         textvariable=youtubeEntryVar)
-youtubeEntry.grid(pady=(0,20))
-#=========when link is wrong print this label
-youtubeEntryError = Label(root,fg="red",
-                        text="",font=("Agency FB", 20))
-youtubeEntryError.grid(pady=(0,10))
-
-# Asking where to save file label
-SaveLabel = Label(root,
-                    text="Where to download file: ",fg="blue",
-                                    font=("Arial", 20,"bold"))
-SaveLabel.grid()
-# Asking where to save file Button
-SaveEntry = Button(root,width=20,bg="green",fg="white",
-                                text="Choose folder",font=("arial",15),
-                                command=openDirectory)
-SaveEntry.grid()
-
-# Entry label if user don`t choose directory
-fileLocationLabelError = Label(root,
-                                            text="", font=("Agency FB", 20))
-fileLocationLabelError.grid(pady=(0,0))
-#======= what to download choice==========
-youtubeChooseLabel = Label(root,
-                            text="Please choose what to download: ",
-                                            font=("Agency FB", 20))
-youtubeChooseLabel.grid()
-
-# Combobox with four choices:
-downloadChoices = ["MP4_720p",
-                   "Mp4_144p",
-                   "Video_3gp",
-                   "Song_MP3"]
-
-youtubeChoices = ttk.Combobox(root,values=downloadChoices)
-youtubeChoices.grid()
-             
-#==================Download button===================
-downloadButton = Button(root,
-                                     text="Download", width=15,bg="green",
-                                     command=DownloadFile)
-downloadButton.grid(pady=(20,20))
-# Progressbar ======>
-progressbar = ttk.Progressbar(root,orient="horizontal",
-                              length=500, mode='indeterminate')
-progressbar.grid(pady=(2,0))
-
-loadingLabel = ttk.Label(root,text="App developed by |> CID",
-                                font=("Agency FB", 20))
-loadingLabel.grid()
-
-root.mainloop()
+if __name__ == "__main__":
